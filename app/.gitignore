@@ -1,0 +1,4 @@
+/build
+/ffmpeg-3.2.8/android/*
+/ffmpeg-3.2.8/ffmpegtemp/*
+/ffmpeg-3.2.8/*.o

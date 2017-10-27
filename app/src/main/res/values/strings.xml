@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">GifBox</string>
+    <string name="frameDelay">帧间隔:%s</string>
+</resources>
