@@ -22,9 +22,8 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".VideoRecordActivity"/>
-
         <activity android:name=".CreateByPictureActivity" />
+        <activity android:name=".VideoRecorderActivity" />
         <provider
             android:name="android.support.v4.content.FileProvider"
             android:authorities="${applicationId}.provider"

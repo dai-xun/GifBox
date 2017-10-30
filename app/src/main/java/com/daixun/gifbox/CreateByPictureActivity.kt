@@ -26,6 +26,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_create_by_picture.*
 import java.io.File
+import java.util.ArrayList
 
 /**
  * @author daixun
@@ -34,24 +35,36 @@ import java.io.File
 
 class CreateByPictureActivity : Activity() {
 
-    private var mPicList = mutableListOf<String>("/storage/emulated/0/DCIM/Camera/IMG_20171024_172239_2.jpg"
-            , "/storage/emulated/0/DCIM/Camera/IMG_20171024_172239_1.jpg"
-            , "/storage/emulated/0/DCIM/Camera/IMG_20171024_172239.jpg"
-            , "/storage/emulated/0/DCIM/Camera/IMG_20171024_172238_2.jpg"
-            , "/storage/emulated/0/DCIM/Camera/IMG_20171024_172238_1.jpg"
-            , "/storage/emulated/0/DCIM/Camera/IMG_20171024_172238.jpg"
-            , "/storage/emulated/0/DCIM/Camera/IMG_20171024_172237_1.jpg"
-            , "/storage/emulated/0/DCIM/Camera/IMG_20171024_172237.jpg")
 
-    private var isLoop = true
+    companion object {
+        const val EXTRA_PICS = "pictures"
+        fun startAction(pics: ArrayList<String>, act: Activity) {
+            var intent = Intent(act, CreateByPictureActivity::class.java)
+            intent.putStringArrayListExtra(EXTRA_PICS, pics)
+            act.startActivity(intent)
+        }
+    }
+
+    private var mPicList = mutableListOf<String>()
+
+    private var gifWidth = 600
+    private var gifHeight = 600
+    private var currentFrame = 0
+    var frameDelay = 300
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_by_picture)
-//        ivGifView.setImageDrawable()
 
+        var pics = intent.getStringArrayListExtra(EXTRA_PICS)
+        if (pics == null || pics.size == 0) {
+            finish()
+            return
+        }
+        pics?.forEach { mPicList.add(it) }
 
         vCreate.setOnClickListener {
-            builderGif(mPicList)
+            builderGif()
         }
         setDelay(frameDelay)
         sbDelay.progress = frameDelay
@@ -73,14 +86,11 @@ class CreateByPictureActivity : Activity() {
             }
 
         })
-//        choosePics()
-
-
     }
 
     override fun onResume() {
         super.onResume()
-        loadFrame(currentFrame,0)
+        loadFrame(currentFrame, 0)
     }
 
     override fun onPause() {
@@ -93,14 +103,11 @@ class CreateByPictureActivity : Activity() {
         tvDelayLabel.text = getStringEx(R.string.frameDelay, d)
     }
 
-    private var gifWidth = 600
-    private var gifHeight = 600
-    private var currentFrame = 0
     private fun showAsGif() {
         loadFrame(0, 0)
     }
 
-    var frameDelay = 300
+
     private fun loadFrame(i: Int, showTime: Long) {
         GlideApp.with(this).load(mPicList.get(getCurrentFrame()))
                 .override(gifWidth, gifHeight).into(object : SimpleTarget<Drawable>() {
@@ -126,9 +133,6 @@ class CreateByPictureActivity : Activity() {
                         currentFrame = 0
                     }
                     loadFrame(getCurrentFrame(), SystemClock.uptimeMillis() + frameDelay)
-                    /*when(it.what){
-
-                    }*/
                 }
                 return false
             }
@@ -156,7 +160,7 @@ class CreateByPictureActivity : Activity() {
         return currentFrame
     }
 
-    private fun builderGif(picList: List<String>) {
+    private fun builderGif() {
         var outPutFile = File(Environment.getExternalStorageDirectory(), "1GIF")
         if (!outPutFile.exists()) outPutFile.mkdirs()
 
@@ -165,7 +169,7 @@ class CreateByPictureActivity : Activity() {
         gifEncoder.start(gifPath)
         gifEncoder.setDelay(frameDelay)   // 1 frame per sec
         var begin = SystemClock.elapsedRealtime()
-        Observable.fromIterable(picList)
+        Observable.fromIterable(mPicList)
                 .map {
                     var begin = System.currentTimeMillis()
                     val bitmap = Glide.with(this).asBitmap().load(it).submit(600, 600).get()
@@ -194,48 +198,5 @@ class CreateByPictureActivity : Activity() {
                     Glide.with(this).load(gifPath).into(ivGifView)
                 })
 
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == Activity.RESULT_OK) {
-            when (requestCode) {
-                PictureConfig.CHOOSE_REQUEST -> {
-                    // 图片选择结果回调
-                    var selectList = PictureSelector.obtainMultipleResult(data)
-                    // 例如 LocalMedia 里面返回两种path
-                    // 1.media.getPath(); 为原图path
-                    // 2.media.getCompressPath();为压缩后path，需判断media.isCompressed();是否为true
-//                    adapter.setList(selectList)
-//                    adapter.notifyDataSetChanged()
-                    mPicList.clear()
-                    selectList?.forEach {
-                        Log.e("TAG", it.path)
-                        mPicList.add(it.path)
-                    }
-                    builderGif(selectList.map { it.path })
-                }
-            }
-        }
-    }
-
-
-    private fun choosePics() {
-        PictureSelector.create(this)
-                .openGallery(PictureMimeType.ofImage())//全部.PictureMimeType.ofAll()、图片.ofImage()、视频.ofVideo()
-//                    .theme()//主题样式(不设置为默认样式) 也可参考demo values/styles下 例如：R.style.picture.white.style
-                .maxSelectNum(100)// 最大图片选择数量 int
-                .minSelectNum(2)// 最小选择数量 int
-                .imageSpanCount(4)// 每行显示个数 int
-                .selectionMode(PictureConfig.MULTIPLE)// 多选 or 单选 PictureConfig.MULTIPLE or PictureConfig.SINGLE
-                .previewImage(true)// 是否可预览图片 true or false
-                .compressGrade(Luban.THIRD_GEAR)// luban压缩档次，默认3档 Luban.THIRD_GEAR、Luban.FIRST_GEAR、Luban.CUSTOM_GEAR
-                .isCamera(false)// 是否显示拍照按钮 true or false
-                .isZoomAnim(true)// 图片列表点击 缩放效果 默认true
-                .sizeMultiplier(0.5f)// glide 加载图片大小 0~1之间 如设置 .glideOverride()无效
-//                    .enableCrop()// 是否裁剪 true or false
-                .compress(false)// 是否压缩 true or false
-                .compressMode(PictureConfig.LUBAN_COMPRESS_MODE)//系统自带 or 鲁班压缩 PictureConfig.SYSTEM_COMPRESS_MODE or LUBAN_COMPRESS_MODE
-                .forResult(PictureConfig.CHOOSE_REQUEST);//结果回调onActivityResult code
     }
 }

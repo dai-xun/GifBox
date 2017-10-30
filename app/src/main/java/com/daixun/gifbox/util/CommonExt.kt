@@ -1,8 +1,10 @@
 package com.fblife.qa.util.ext
 
+import android.app.Activity
 import android.support.annotation.PluralsRes
 import android.support.v4.content.ContextCompat
 import android.view.View
+import android.widget.Toast
 
 /**
  * Created by daixun on 17-9-8.
@@ -25,4 +27,12 @@ fun View.setVisibility(isVisible: Boolean) {
     } else {
         this.visibility = View.GONE
     }
+}
+
+fun Activity.toast(msg: String) {
+    Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+}
+
+fun Activity.toast(msg: Int) {
+    Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
 }
